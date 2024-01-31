@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import QApplication, QWidget, QGridLayout, \
     QLineEdit, QPushButton, QLabel, QMainWindow, QTableWidget, QTableWidgetItem, \
-    QDialog, QVBoxLayout, QComboBox, QToolBar
+    QDialog, QVBoxLayout, QComboBox, QToolBar, QStatusBar
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QAction, QIcon
 import sys
@@ -18,8 +18,8 @@ class MainWindow(QMainWindow):
         edit_menu_item = self.menuBar().addMenu("&Edit")
 
         add_action_student = QAction(QIcon("icons/add.png"), "Add Student", self)
-        add_action_student.triggered.connect(self.insert_data)
         file_menu_item.addAction(add_action_student)
+        add_action_student.triggered.connect(self.insert_data)
 
         about_action = QAction("About", self)
         help_menu_item.addAction(about_action)
@@ -43,8 +43,39 @@ class MainWindow(QMainWindow):
 
         toolbar.addAction(add_action_student)
         toolbar.addAction(search_action)
-    # loading data from database
 
+        # create s atatus bar and status bar elements
+        self.statusbar = QStatusBar()
+        self.setStatusBar(self.statusbar)
+
+        # Detect s cell  click
+
+        self.table.cellClicked.connect(self.cell_clicked)
+
+    def cell_clicked(self):
+        edit_button = QPushButton("Edit Button")
+        edit_button.clicked.connect(self.edit_data)
+
+        delete_button = QPushButton("Delete Button")
+        delete_button.clicked.connect(self.delete_data)
+
+        children = self.findChildren(QPushButton)
+        if children:
+            for child in children:
+                self.statusbar.removeWidget(child)
+
+        self.statusbar.addWidget(edit_button)
+        self.statusbar.addWidget(delete_button)
+
+    # edit data from database
+
+    def edit_data(self):
+        dialog = EditDialog()
+        dialog.exec()
+    def delete_data(self):
+        dialog = DeleteDialog()
+        dialog.exec()
+    # loading data from database
     def load_data(self):
         connection = sqlite3.connect("database.db")
         result = connection.execute("SELECT * FROM students")
@@ -63,6 +94,14 @@ class MainWindow(QMainWindow):
     def search(self):
         dialog = SearchDialog()
         dialog.exec()
+
+
+class EditDialog(QDialog):
+    pass
+
+
+class DeleteDialog(QDialog):
+    pass
 
 
 class InsertDialog(QDialog):
