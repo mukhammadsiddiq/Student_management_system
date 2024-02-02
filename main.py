@@ -72,9 +72,11 @@ class MainWindow(QMainWindow):
     def edit_data(self):
         dialog = EditDialog()
         dialog.exec()
+
     def delete_data(self):
         dialog = DeleteDialog()
         dialog.exec()
+
     # loading data from database
     def load_data(self):
         connection = sqlite3.connect("database.db")
@@ -87,17 +89,77 @@ class MainWindow(QMainWindow):
                 self.table.setItem(row_number, column_number, QTableWidgetItem(str(data)))
         connection.close()
 
+    # inserting data to database
     def insert_data(self):
         dialog = InsertDialog()
         dialog.exec()
-        
+
     def search(self):
         dialog = SearchDialog()
         dialog.exec()
 
 
+# editing data
+
+
 class EditDialog(QDialog):
-    pass
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Insert Student Data")
+        self.setFixedWidth(300)
+        self.setFixedHeight(300)
+        layout = QVBoxLayout()
+
+        # get student name from selected row
+        index = main_window.table.currentRow()
+        student_name = main_window.table.item(index, 1).text()
+
+        # add student name widget
+        self.student_name = QLineEdit(student_name)
+        self.student_name.setPlaceholderText("Name")
+        layout.addWidget(self.student_name)
+
+        # get id of student from the database
+
+        self.student_id = main_window.table.item(index, 0).text()
+
+        # add current course name
+        course_name = main_window.table.item(index, 2).text()
+        # add combo box widget with study courses
+        self.student_project = QComboBox()
+        courses = ["Software Engineering", "Math", "Astronomy", "Biology", "Physics"]
+
+        # Add each course individually to the QComboBox
+        for course in courses:
+            self.student_project.addItem(course)
+        self.student_project.setCurrentText(course_name)
+        layout.addWidget(self.student_project)
+
+        # add current mobile phone number
+        current_number = main_window.table.item(index, 3).text()
+        self.phone_number = QLineEdit(current_number)
+        self.phone_number.setPlaceholderText("Phone number")
+        layout.addWidget(self.phone_number)
+
+        # add submit button
+
+        button = QPushButton("Submit")
+        button.clicked.connect(self.update_student)
+        layout.addWidget(button)  # Added the button to the layout
+        self.setLayout(layout)
+
+    def update_student(self):
+        connection = sqlite3.connect("database.db")
+        cursor = connection.cursor()
+        cursor.execute("UPDATE students SET name = ?, course = ?, mobile = ? WHERE id = ?",
+                       (self.student_name.text(),
+                        self.student_project.itemText(self.student_project.currentIndex()),
+                        self.phone_number.text(),
+                        self.student_id))
+        connection.commit()
+        cursor.close()
+        connection.close()
+        main_window.load_data()
 
 
 class DeleteDialog(QDialog):
@@ -120,8 +182,12 @@ class InsertDialog(QDialog):
         # add combo box widget with study courses
 
         self.student_project = QComboBox()
-        self.courses = ["Software Engineering", "Math", "Astronomy", "Biology", "Pysics"]
-        self.student_project.addItem(self.courses)
+        courses = ["Software Engineering", "Math", "Astronomy", "Biology", "Physics"]
+
+        # Add each course individually to the QComboBox
+        for course in courses:
+            self.student_project.addItem(course)
+
         layout.addWidget(self.student_project)
 
         # add mobile phone number
@@ -134,12 +200,13 @@ class InsertDialog(QDialog):
 
         button = QPushButton("Submit")
         button.clicked.connect(self.add_student)
+        layout.addWidget(button)  # Added the button to the layout
         self.setLayout(layout)
 
     # function for inserting new data to database
     def add_student(self):
         name = self.student_name.text()
-        course = self.student_project.itemText(self.student_project.currentIndex())
+        course = self.student_project.currentText()
         phone = self.phone_number.text()
 
         connection = sqlite3.connect("database.db")
@@ -175,6 +242,7 @@ class SearchDialog(QDialog):
         self.setLayout(layout)
 
     def search_name(self):
+        # connecting to database and searching for the student name
         name = self.student_name.text()
         connection = sqlite3.connect("database.db")
         cursor = connection.cursor()
@@ -194,6 +262,3 @@ main_window = MainWindow()
 main_window.show()
 main_window.load_data()
 sys.exit(app.exec())
-
-
-
